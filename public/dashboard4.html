@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pupil Detector</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cyan: #00ffe7;
+    --red: #ff2d55;
+    --amber: #ffb300;
+    --bg: #060a0f;
+    --panel: #0b1018;
+    --border: #0d2030;
+    --text: #8ab5c8;
+    --dim: #1e3a4a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* scan line overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,255,231,0.012) 2px,
+      rgba(0,255,231,0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Header */
+  header {
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-ring {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--cyan);
+    position: relative;
+    animation: rotate 6s linear infinite;
+  }
+
+  .logo-ring::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 12px var(--cyan);
+  }
+
+  .logo-ring::after {
+    content: '';
+    position: absolute;
+    top: -3px; left: -3px; right: -3px; bottom: -3px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,255,231,0.15);
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+
+  @keyframes rotate { to { transform: rotate(360deg); } }
+  @keyframes pulse-ring {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0; }
+  }
+
+  .logo-text h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #d0eaf5;
+  }
+
+  .logo-text p {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    margin-top: 1px;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .status-pill {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    text-transform: uppercase;
+    color: var(--dim);
+    transition: all 0.3s;
+  }
+
+  .status-pill.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,255,231,0.15);
+  }
+
+  .status-pill.alert {
+    border-color: var(--red);
+    color: var(--red);
+    box-shadow: 0 0 10px rgba(255,45,85,0.2);
+    animation: flash 1s ease-in-out infinite;
+  }
+
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Main layout */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 0;
+  }
+
+  /* Video area */
+  .viewport {
+    position: relative;
+    background: #000;
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+  }
+
+  #video {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 640px;
+    height: 480px;
+  }
+
+  #canvas {
+    max-width: 100%;
+    max-height: 600px;
+    display: block;
+  }
+
+  .crosshair {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .crosshair svg {
+    width: 60px;
+    height: 60px;
+    opacity: 0.3;
+    animation: spin-slow 8s linear infinite;
+  }
+
+  @keyframes spin-slow { to { transform: rotate(360deg); } }
+
+  .viewport-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Corner brackets */
+  .corner {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-color: var(--cyan);
+    border-style: solid;
+    opacity: 0.5;
+  }
+
+  .corner.tl { top: 16px; left: 16px; border-width: 2px 0 0 2px; }
+  .corner.tr { top: 16px; right: 16px; border-width: 2px 2px 0 0; }
+  .corner.bl { bottom: 16px; left: 16px; border-width: 0 0 2px 2px; }
+  .corner.br { bottom: 16px; right: 16px; border-width: 0 2px 2px 0; }
+
+  .start-btn {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: none;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 10px 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+  }
+
+  .start-btn:hover {
+    background: rgba(0,255,231,0.08);
+    box-shadow: 0 0 20px rgba(0,255,231,0.2);
+  }
+
+  .start-btn:disabled {
+    border-color: var(--dim);
+    color: var(--dim);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* Side panel */
+  .panel {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .panel-section {
+    border-bottom: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .panel-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-label::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 1px;
+    background: var(--cyan);
+    opacity: 0.5;
+  }
+
+  /* Metric rows */
+  .metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+
+  .metric-name {
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: #4a7a8a;
+    text-transform: uppercase;
+  }
+
+  .metric-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0,255,231,0.4);
+    transition: color 0.3s;
+  }
+
+  .metric-value.warn { color: var(--amber); text-shadow: 0 0 8px rgba(255,179,0,0.4); }
+  .metric-value.alert { color: var(--red); text-shadow: 0 0 8px rgba(255,45,85,0.4); }
+
+  /* EAR bar */
+  .bar-track {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.2s ease, background 0.3s;
+  }
+
+  /* Blink log */
+  .blink-log {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    height: 90px;
+    overflow-y: auto;
+    line-height: 1.8;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .blink-entry { color: var(--text); }
+  .blink-entry span { color: var(--cyan); margin-right: 8px; }
+
+  /* Pupil diagram */
+  .pupil-diagram {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .eye-display {
+    text-align: center;
+  }
+
+  .eye-display canvas {
+    display: block;
+    margin: 0 auto 6px;
+  }
+
+  .eye-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+  }
+
+  /* Fatigue index */
+  .fatigue-bar {
+    position: relative;
+    height: 8px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .fatigue-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--amber), var(--red));
+    border-radius: 1px;
+    transition: width 0.5s ease;
+  }
+
+  .fatigue-needle {
+    position: absolute;
+    top: -4px;
+    width: 2px;
+    height: 16px;
+    background: #fff;
+    border-radius: 1px;
+    transform: translateX(-50%);
+    transition: left 0.5s ease;
+    box-shadow: 0 0 4px #fff;
+  }
+
+  /* Info box */
+  .info-box {
+    background: rgba(0,255,231,0.03);
+    border: 1px solid rgba(0,255,231,0.1);
+    padding: 12px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #3a6070;
+    letter-spacing: 0.3px;
+  }
+
+  /* No face indicator */
+  .no-face {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--red);
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+
+  .no-face.visible { opacity: 1; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 10px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+  }
+
+  .footer-mono {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+  }
+</style>
+
+<style id="iframe-hide">
+/* ── CIQ IFRAME MODE OVERRIDE ── */
+/* When inside an iframe: stack layout, show camera at top */
+html, body {
+  overflow: hidden !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+header, nav, footer, .brand, .badges, .header,
+.btn-zone, .scene-btns, #permission-screen button,
+h1, .header p, .card-label:not(.keep) { 
+  display: none !important; 
+}
+main, #app, #main-ui {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+/* Video side fills top portion */
+.v-side, .video-side, #video-wrap, .video-wrap {
+  min-height: 0 !important;
+  height: 55% !important;
+  width: 100% !important;
+  border-right: none !important;
+}
+/* Stats fill remaining space */
+.stats-side, .data-col, .right-col, .col {
+  height: 45% !important;
+  overflow: hidden !important;
+}
+/* Canvas fills video container */
+canvas, #canvas, #face-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+}
+/* Grid layout → column */
+main, .grid {
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 55% 45% !important;
+}
+/* Prompt overlay - make it small */
+.prompt, #permission-screen {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 10 !important;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-ring"></div>
+    <div class="logo-text">
+      <h1>OcuTrack</h1>
+      <p>PUPIL DETECTION SYSTEM · v1.0</p>
+    </div>
+  </div>
+  <div class="header-status">
+    <div class="status-pill" id="camStatus">CAM OFFLINE</div>
+    <div class="status-pill" id="faceStatus">NO FACE</div>
+    <div class="status-pill" id="blinkStatus">BLINK —</div>
+  </div>
+</header>
+
+<main>
+  <div class="viewport">
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <div class="crosshair" id="crosshair">
+      <svg viewBox="0 0 60 60" fill="none" stroke="#00ffe7" stroke-width="1">
+        <circle cx="30" cy="30" r="28" stroke-dasharray="4 4"/>
+        <line x1="30" y1="2" x2="30" y2="14"/>
+        <line x1="30" y1="46" x2="30" y2="58"/>
+        <line x1="2" y1="30" x2="14" y2="30"/>
+        <line x1="46" y1="30" x2="58" y2="30"/>
+      </svg>
+    </div>
+
+    <div class="no-face" id="noFace">⚠ NO FACE DETECTED</div>
+    <button class="start-btn" id="startBtn" onclick="startCamera()">▶ INITIALIZE CAMERA</button>
+  </div>
+
+  <div class="panel">
+    <!-- Metrics -->
+    <div class="panel-section">
+      <div class="panel-label">Live Metrics</div>
+      <div class="metric">
+        <span class="metric-name">Left EAR</span>
+        <span class="metric-value" id="leftEAR">—</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="leftBar" style="width:0%;background:var(--cyan)"></div></div>
+
+      <div class="metric" style="margin-top:12px">
+        <span class="metric-name">Right EAR</span>
+        <span class="metric-value" id="rightEAR">—</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="rightBar" style="width:0%;background:var(--cyan)"></div></div>
+
+      <div class="metric" style="margin-top:14px">
+        <span class="metric-name">Blink Rate</span>
+        <span class="metric-value" id="blinkRate">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric-name">Total Blinks</span>
+        <span class="metric-value" id="blinkCount">0</span>
+      </div>
+      <div class="metric">
+        <span class="metric-name">Gaze Direction</span>
+        <span class="metric-value" id="gazeDir" style="font-size:14px">—</span>
+      </div>
+    </div>
+
+    <!-- Eye diagrams -->
+    <div class="panel-section">
+      <div class="panel-label">Pupil Position</div>
+      <div class="pupil-diagram">
+        <div class="eye-display">
+          <canvas id="leftEyeCanvas" width="90" height="56"></canvas>
+          <div class="eye-label">LEFT</div>
+        </div>
+        <div class="eye-display">
+          <canvas id="rightEyeCanvas" width="90" height="56"></canvas>
+          <div class="eye-label">RIGHT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fatigue index -->
+    <div class="panel-section">
+      <div class="panel-label">Fatigue Index</div>
+      <div class="metric">
+        <span class="metric-name">PERCLOS</span>
+        <span class="metric-value" id="perclosVal">—</span>
+      </div>
+      <div class="fatigue-bar">
+        <div class="fatigue-fill" id="fatigueFill" style="width:0%"></div>
+        <div class="fatigue-needle" id="fatigueNeedle" style="left:0%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim)">ALERT</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim)">FATIGUED</span>
+      </div>
+    </div>
+
+    <!-- Blink log -->
+    <div class="panel-section">
+      <div class="panel-label">Blink Log</div>
+      <div class="blink-log" id="blinkLog">
+        <div style="color:var(--dim)">Awaiting camera feed...</div>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="panel-section">
+      <div class="info-box">
+        Uses EAR (Eye Aspect Ratio) from facial landmarks to detect blinks. PERCLOS tracks percentage of time eyes are &gt;80% closed — a clinical fatigue indicator.
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span class="footer-mono" id="fps">FPS: —</span>
+  <span class="footer-mono">🔒 ALL PROCESSING LOCAL · NO DATA TRANSMITTED</span>
+  <span class="footer-mono" id="sessionTime">SESSION: 00:00</span>
+</footer>
+
+<!-- MediaPipe Face Mesh -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+
+<script>
+// MediaPipe landmark indices for eyes
+const LEFT_EYE  = [362, 385, 387, 263, 373, 380];
+const RIGHT_EYE = [33,  160, 158, 133, 153, 144];
+const LEFT_IRIS  = [474, 475, 476, 477];
+const RIGHT_IRIS = [469, 470, 471, 472];
+// Gaze: inner/outer corners
+const LEFT_CORNERS  = [362, 263];
+const RIGHT_CORNERS = [33, 133];
+
+const EAR_THRESHOLD = 0.21;
+const BLINK_COOLDOWN = 150; // ms
+
+let blinkCount = 0;
+let lastBlinkTime = 0;
+let eyeClosed = false;
+let blinkHistory = []; // timestamps
+let perclosHistory = []; // 0/1 per frame
+let sessionStart = Date.now();
+let faceDetected = false;
+let frameCount = 0;
+let lastFpsTime = Date.now();
+let fps = 0;
+let running = false;
+
+const video   = document.getElementById('video');
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+
+const leftEyeCanvas  = document.getElementById('leftEyeCanvas');
+const rightEyeCanvas = document.getElementById('rightEyeCanvas');
+const lCtx = leftEyeCanvas.getContext('2d');
+const rCtx = rightEyeCanvas.getContext('2d');
+
+function dist(a, b) {
+  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function computeEAR(lms, indices) {
+  const [p1,p2,p3,p4,p5,p6] = indices.map(i => lms[i]);
+  const n = dist(p2, p6) + dist(p3, p5);
+  const d = 2 * dist(p1, p4);
+  return d < 0.001 ? 0 : n / d;
+}
+
+function getIrisCenter(lms, indices) {
+  const pts = indices.map(i => lms[i]);
+  return {
+    x: pts.reduce((s,p) => s + p.x, 0) / pts.length,
+    y: pts.reduce((s,p) => s + p.y, 0) / pts.length,
+  };
+}
+
+function getGaze(lms) {
+  const lIris = getIrisCenter(lms, LEFT_IRIS);
+  const lL = lms[LEFT_CORNERS[0]], lR = lms[LEFT_CORNERS[1]];
+  const lRatio = (lIris.x - lL.x) / (lR.x - lL.x + 0.001);
+
+  const rIris = getIrisCenter(lms, RIGHT_IRIS);
+  const rL = lms[RIGHT_CORNERS[0]], rR = lms[RIGHT_CORNERS[1]];
+  const rRatio = (rIris.x - rL.x) / (rR.x - rL.x + 0.001);
+
+  const avg = (lRatio + rRatio) / 2;
+  if (avg < 0.38) return "◀ LEFT";
+  if (avg > 0.62) return "RIGHT ▶";
+  return "● CENTER";
+}
+
+function drawEyeMini(ctx, lms, eyeIndices, irisIndices, w, h) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#060a0f';
+  ctx.fillRect(0, 0, w, h);
+
+  // Get eye bounding box from landmarks
+  const pts = eyeIndices.map(i => lms[i]);
+  const xs = pts.map(p => p.x);
+  const ys = pts.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const pw = maxX - minX || 0.05;
+  const ph = maxY - minY || 0.05;
+
+  const pad = 0.5;
+  const toX = (x) => ((x - minX) / pw * (1 + pad * 2) - pad) * w;
+  const toY = (y) => ((y - minY) / ph * (1 + pad * 2) - pad) * h;
+
+  // Draw eye outline
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const x = toX(p.x), y = toY(p.y);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(0,255,231,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(0,255,231,0.04)';
+  ctx.fill();
+
+  // Draw iris/pupil
+  const iris = getIrisCenter(lms, irisIndices);
+  const ix = toX(iris.x), iy = toY(iris.y);
+  const ir = (w * 0.18);
+
+  ctx.beginPath();
+  ctx.arc(ix, iy, ir, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,255,231,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#00ffe7';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Pupil center dot
+  ctx.beginPath();
+  ctx.arc(ix, iy, ir * 0.35, 0, Math.PI * 2);
+  ctx.fillStyle = '#00ffe7';
+  ctx.shadowColor = '#00ffe7';
+  ctx.shadowBlur = 6;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Crosshair
+  ctx.strokeStyle = 'rgba(0,255,231,0.25)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(ix - ir * 1.8, iy); ctx.lineTo(ix + ir * 1.8, iy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ix, iy - ir * 1.8); ctx.lineTo(ix, iy + ir * 1.8); ctx.stroke();
+}
+
+function earColor(ear) {
+  if (ear < EAR_THRESHOLD) return '#ff2d55';
+  if (ear < 0.28) return '#ffb300';
+  return '#00ffe7';
+}
+
+function setMetricClass(el, value) {
+  el.classList.remove('warn','alert');
+  if (value === 'alert') el.classList.add('alert');
+  else if (value === 'warn') el.classList.add('warn');
+}
+
+function addBlinkLog(text) {
+  const log = document.getElementById('blinkLog');
+  const t = new Date().toLocaleTimeString('en-US', {hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'blink-entry';
+  div.innerHTML = `<span>${t}</span>${text}`;
+  if (log.firstChild && log.firstChild.style) log.insertBefore(div, log.firstChild);
+  else { log.innerHTML = ''; log.appendChild(div); }
+  // Keep only 20 entries
+  while (log.children.length > 20) log.removeChild(log.lastChild);
+}
+
+function onResults(results) {
+  frameCount++;
+  const now = Date.now();
+
+  // FPS
+  if (now - lastFpsTime >= 1000) {
+    fps = Math.round(frameCount * 1000 / (now - lastFpsTime));
+    frameCount = 0;
+    lastFpsTime = now;
+    document.getElementById('fps').textContent = `FPS: ${fps}`;
+  }
+
+  // Session timer
+  const elapsed = Math.floor((now - sessionStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+  const s = String(elapsed % 60).padStart(2,'0');
+  document.getElementById('sessionTime').textContent = `SESSION: ${m}:${s}`;
+
+  // Draw frame
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+    faceDetected = false;
+    document.getElementById('faceStatus').textContent = 'NO FACE';
+    document.getElementById('faceStatus').classList.remove('active');
+    document.getElementById('noFace').classList.add('visible');
+    document.getElementById('crosshair').style.display = 'flex';
+    window.parent.postMessage({type:'ciq-detection',detectorKey:'pupil',faceVisible:false,attention:0},'*');
+    return;
+  }
+
+  faceDetected = true;
+  document.getElementById('faceStatus').textContent = 'FACE LOCKED';
+  document.getElementById('faceStatus').classList.add('active');
+  document.getElementById('noFace').classList.remove('visible');
+  document.getElementById('crosshair').style.display = 'none';
+
+  const lms = results.multiFaceLandmarks[0];
+
+  // EAR
+  const leftEAR  = computeEAR(lms, LEFT_EYE);
+  const rightEAR = computeEAR(lms, RIGHT_EYE);
+  const avgEAR   = (leftEAR + rightEAR) / 2;
+
+  // PERCLOS tracking (80% closed = EAR below 0.2)
+  const closed = avgEAR < 0.2 ? 1 : 0;
+  perclosHistory.push(closed);
+  if (perclosHistory.length > 300) perclosHistory.shift(); // ~10s window
+  const perclos = perclosHistory.reduce((a,b) => a+b, 0) / perclosHistory.length * 100;
+
+  // Blink detection
+  if (avgEAR < EAR_THRESHOLD && !eyeClosed) {
+    eyeClosed = true;
+  } else if (avgEAR >= EAR_THRESHOLD && eyeClosed) {
+    eyeClosed = false;
+    if (now - lastBlinkTime > BLINK_COOLDOWN) {
+      blinkCount++;
+      lastBlinkTime = now;
+      blinkHistory.push(now);
+      blinkHistory = blinkHistory.filter(t => now - t < 60000);
+      addBlinkLog(`Blink #${blinkCount} detected`);
+      document.getElementById('blinkStatus').textContent = `BLINK #${blinkCount}`;
+      document.getElementById('blinkStatus').classList.add('active');
+      setTimeout(() => {
+        document.getElementById('blinkStatus').classList.remove('active');
+      }, 400);
+    }
+  }
+
+  // Blink rate (per minute)
+  const blinkRate = blinkHistory.length; // in last minute
+
+  // Update UI
+  const lEARv = leftEAR.toFixed(3);
+  const rEARv = rightEAR.toFixed(3);
+  const lEl = document.getElementById('leftEAR');
+  const rEl = document.getElementById('rightEAR');
+  lEl.textContent = lEARv;
+  rEl.textContent = rEARv;
+  setMetricClass(lEl, leftEAR < EAR_THRESHOLD ? 'alert' : leftEAR < 0.28 ? 'warn' : '');
+  setMetricClass(rEl, rightEAR < EAR_THRESHOLD ? 'alert' : rightEAR < 0.28 ? 'warn' : '');
+
+  const lPct = Math.min(leftEAR / 0.4 * 100, 100);
+  const rPct = Math.min(rightEAR / 0.4 * 100, 100);
+  document.getElementById('leftBar').style.width = lPct + '%';
+  document.getElementById('leftBar').style.background = earColor(leftEAR);
+  document.getElementById('rightBar').style.width = rPct + '%';
+  document.getElementById('rightBar').style.background = earColor(rightEAR);
+
+  document.getElementById('blinkRate').textContent = blinkRate + '/min';
+  const blinkEl = document.getElementById('blinkRate');
+  setMetricClass(blinkEl, blinkRate > 30 ? 'alert' : blinkRate < 8 ? 'warn' : '');
+
+  document.getElementById('blinkCount').textContent = blinkCount;
+  document.getElementById('gazeDir').textContent = getGaze(lms);
+
+  // Fatigue
+  const perclosDisp = perclos.toFixed(1) + '%';
+  document.getElementById('perclosVal').textContent = perclosDisp;
+  const pEl = document.getElementById('perclosVal');
+  setMetricClass(pEl, perclos > 30 ? 'alert' : perclos > 15 ? 'warn' : '');
+  document.getElementById('fatigueFill').style.width = Math.min(perclos * 2, 100) + '%';
+  document.getElementById('fatigueNeedle').style.left = Math.min(perclos * 2, 100) + '%';
+
+  // Draw landmarks on main canvas
+  const W = canvas.width, H = canvas.height;
+
+  // Draw left eye outline
+  ctx.beginPath();
+  LEFT_EYE.forEach((idx, i) => {
+    const p = lms[idx];
+    const x = p.x * W, y = p.y * H;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.strokeStyle = earColor(leftEAR);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Draw right eye outline
+  ctx.beginPath();
+  RIGHT_EYE.forEach((idx, i) => {
+    const p = lms[idx];
+    const x = p.x * W, y = p.y * H;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.strokeStyle = earColor(rightEAR);
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Draw iris circles
+  [LEFT_IRIS, RIGHT_IRIS].forEach((irisIdx, side) => {
+    const center = getIrisCenter(lms, irisIdx);
+    const p0 = lms[irisIdx[0]], p2 = lms[irisIdx[2]];
+    const r = dist(p0, p2) / 2 * W;
+    const cx = center.x * W, cy = center.y * H;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,255,231,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Pupil dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.3, 0, Math.PI * 2);
+    ctx.fillStyle = '#00ffe7';
+    ctx.shadowColor = '#00ffe7';
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Crosshair lines
+    ctx.strokeStyle = 'rgba(0,255,231,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx - r * 1.6, cy); ctx.lineTo(cx + r * 1.6, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - r * 1.6); ctx.lineTo(cx, cy + r * 1.6); ctx.stroke();
+
+    // EAR label
+    const ear = side === 0 ? leftEAR : rightEAR;
+    ctx.font = "bold 11px 'Share Tech Mono', monospace";
+    ctx.fillStyle = earColor(ear);
+    ctx.fillText(`EAR: ${ear.toFixed(3)}`, cx - r, cy - r - 8);
+  });
+
+  // Mini eye diagrams
+  drawEyeMini(lCtx, lms, LEFT_EYE,  LEFT_IRIS,  90, 56);
+  drawEyeMini(rCtx, lms, RIGHT_EYE, RIGHT_IRIS, 90, 56);
+  // ── CIQ ──
+  var _pa=Math.round(Math.min(100,Math.max(0,((leftEAR+rightEAR)/2)/0.42*100)));
+  window.parent.postMessage({type:'ciq-detection',detectorKey:'pupil',faceVisible:true,attention:_pa},'*');
+}
+
+async function startCamera() {
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ INITIALIZING...';
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } });
+    video.srcObject = stream;
+
+    const faceMesh = new FaceMesh({
+      locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,   // needed for iris (478 landmarks)
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    faceMesh.onResults(onResults);
+
+    const camera = new Camera(video, {
+      onFrame: async () => { await faceMesh.send({ image: video }); },
+      width: 640,
+      height: 480,
+    });
+
+    await camera.start();
+
+    running = true;
+    btn.style.display = 'none';
+    document.getElementById('camStatus').textContent = 'CAM ONLINE';
+    document.getElementById('camStatus').classList.add('active');
+
+    addBlinkLog('Camera initialized');
+    sessionStart = Date.now();
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '▶ INITIALIZE CAMERA';
+    console.error(err);
+    alert('Camera access denied or MediaPipe failed to load. Please allow camera and try again.\n\n' + err.message);
+  }
+}
+
+// ── CIQ auto-start ──
+window.addEventListener('message',function(e){if(e.data&&e.data.type==='ciq-start-camera'){var b=document.getElementById('startBtn');if(b&&!b.disabled){b.disabled=true;startCamera();}}}); 
+</script>
+</body>
+</html>

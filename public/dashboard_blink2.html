@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Blink Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #06080d;
+    color: #7aafc0;
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: #0a0e18;
+    border-bottom: 1px solid #0f1e30;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .brand h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #d8eef8;
+  }
+
+  .brand p {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #1a3a4a;
+  }
+
+  .badges { display: flex; gap: 10px; }
+
+  .badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+    border: 1px solid #0f1e30;
+    color: #1a3a4a;
+    text-transform: uppercase;
+    transition: all 0.3s;
+  }
+
+  .badge.on { border-color: #00f5d4; color: #00f5d4; }
+  .badge.blink-flash { border-color: #ffb700; color: #ffb700; }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 280px;
+  }
+
+  .video-side {
+    position: relative;
+    background: #000;
+    border-right: 1px solid #0f1e30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+  }
+
+  #video {
+    position: absolute;
+    width: 640px;
+    height: 480px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #canvas { display: block; max-width: 100%; }
+
+  .c { position: absolute; width: 18px; height: 18px; border-color: rgba(0,245,212,0.35); border-style: solid; }
+  .c.tl { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+  .c.tr { top: 10px; right: 10px; border-width: 2px 2px 0 0; }
+  .c.bl { bottom: 10px; left: 10px; border-width: 0 0 2px 2px; }
+  .c.br { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+
+  .big-count {
+    position: absolute;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+    display: none;
+  }
+
+  .big-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 52px;
+    color: #00f5d4;
+    text-shadow: 0 0 20px rgba(0,245,212,0.5);
+    line-height: 1;
+  }
+
+  .big-label { font-size: 11px; letter-spacing: 3px; color: #1a3a4a; text-transform: uppercase; }
+
+  .prompt {
+    position: absolute; inset: 0;
+    background: rgba(6,8,13,0.92);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px;
+  }
+
+  .prompt p { font-family: 'Share Tech Mono', monospace; font-size: 12px; letter-spacing: 2px; color: #1a3a4a; }
+
+  #status-msg {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; color: #ffb700;
+    letter-spacing: 1px; min-height: 18px;
+    text-align: center; max-width: 320px;
+  }
+
+  .start-btn {
+    background: none; border: 1px solid #00f5d4;
+    color: #00f5d4; font-family: 'Share Tech Mono', monospace;
+    font-size: 13px; letter-spacing: 3px;
+    padding: 12px 30px; cursor: pointer; transition: all 0.2s;
+  }
+
+  .start-btn:hover { background: rgba(0,245,212,0.07); }
+  .start-btn:disabled { border-color: #1a3a4a; color: #1a3a4a; cursor: not-allowed; }
+
+  .panel { background: #0a0e18; display: flex; flex-direction: column; }
+
+  .ps { border-bottom: 1px solid #0f1e30; padding: 16px 18px; }
+
+  .ps-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; letter-spacing: 3px;
+    color: #1a3a4a; text-transform: uppercase; margin-bottom: 12px;
+  }
+
+  .ear-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .ear-name { font-size: 12px; letter-spacing: 1px; color: #1a3a4a; width: 36px; text-transform: uppercase; flex-shrink: 0; }
+  .ear-track { flex: 1; height: 5px; background: #0f1e30; border-radius: 3px; overflow: hidden; }
+  .ear-fill { height: 100%; border-radius: 3px; transition: width 0.1s, background 0.2s; background: #00f5d4; }
+  .ear-val { font-family: 'Share Tech Mono', monospace; font-size: 13px; width: 46px; text-align: right; flex-shrink: 0; color: #1a3a4a; transition: color 0.2s; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat { background: rgba(0,245,212,0.03); border: 1px solid #0f1e30; padding: 9px 11px; }
+  .stat-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 2px; color: #1a3a4a; text-transform: uppercase; margin-bottom: 3px; }
+  .stat-val { font-family: 'Share Tech Mono', monospace; font-size: 22px; color: #00f5d4; transition: color 0.3s; }
+  .stat-val.warn { color: #ffb700; }
+  .stat-val.danger { color: #ff3355; }
+
+  .timeline { height: 44px; background: #0f1e30; border-radius: 2px; position: relative; overflow: hidden; }
+  .tl-tick { position: absolute; top: 4px; bottom: 4px; width: 3px; background: #00f5d4; border-radius: 1px; }
+
+  .log {
+    font-family: 'Share Tech Mono', monospace; font-size: 11px;
+    flex: 1; overflow-y: auto; scrollbar-width: thin;
+    scrollbar-color: #0f1e30 transparent;
+    display: flex; flex-direction: column; gap: 3px; max-height: 160px;
+  }
+
+  .log-row { display: flex; gap: 8px; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateX(-4px); } to { opacity:1; } }
+  .log-t { color: #1a3a4a; flex-shrink: 0; }
+  .log-m { color: #7aafc0; }
+  .log-m.ev { color: #00f5d4; }
+  .log-m.wn { color: #ffb700; }
+  .log-m.er { color: #ff3355; }
+
+  footer {
+    border-top: 1px solid #0f1e30; background: #0a0e18;
+    padding: 8px 24px; display: flex; justify-content: space-between;
+  }
+
+  .fm { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 2px; color: #1a3a4a; }
+</style>
+
+<style id="iframe-hide">
+/* ── CIQ IFRAME MODE OVERRIDE ── */
+/* When inside an iframe: stack layout, show camera at top */
+html, body {
+  overflow: hidden !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+header, nav, footer, .brand, .badges, .header,
+.btn-zone, .scene-btns, #permission-screen button,
+h1, .header p, .card-label:not(.keep) { 
+  display: none !important; 
+}
+main, #app, #main-ui {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+/* Video side fills top portion */
+.v-side, .video-side, #video-wrap, .video-wrap {
+  min-height: 0 !important;
+  height: 55% !important;
+  width: 100% !important;
+  border-right: none !important;
+}
+/* Stats fill remaining space */
+.stats-side, .data-col, .right-col, .col {
+  height: 45% !important;
+  overflow: hidden !important;
+}
+/* Canvas fills video container */
+canvas, #canvas, #face-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+}
+/* Grid layout → column */
+main, .grid {
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 55% 45% !important;
+}
+/* Prompt overlay - make it small */
+.prompt, #permission-screen {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 10 !important;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>BlinkSense</h1>
+    <p>Real-time blink detection · EAR algorithm · MediaPipe</p>
+  </div>
+  <div class="badges">
+    <div class="badge" id="camBadge">CAM OFF</div>
+    <div class="badge" id="faceBadge">NO FACE</div>
+    <div class="badge" id="blinkBadge">BLINKS: 0</div>
+  </div>
+</header>
+
+<main>
+  <div class="video-side">
+    <div class="c tl"></div><div class="c tr"></div>
+    <div class="c bl"></div><div class="c br"></div>
+
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <div class="big-count" id="bigCount">
+      <div class="big-num" id="bigNum">0</div>
+      <div class="big-label">Blinks</div>
+    </div>
+
+    <div class="prompt" id="prompt">
+      <p>Camera + MediaPipe required</p>
+      <div id="status-msg">Click start and allow camera access</div>
+      <button class="start-btn" id="startBtn" onclick="init()">▶ Start Detection</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ps">
+      <div class="ps-label">Eye Aspect Ratio (EAR)</div>
+      <div class="ear-row">
+        <span class="ear-name">Left</span>
+        <div class="ear-track"><div class="ear-fill" id="lBar" style="width:0%"></div></div>
+        <span class="ear-val" id="lVal">—</span>
+      </div>
+      <div class="ear-row">
+        <span class="ear-name">Right</span>
+        <div class="ear-track"><div class="ear-fill" id="rBar" style="width:0%"></div></div>
+        <span class="ear-val" id="rVal">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#1a3a4a">THRESHOLD: 0.22</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:#1a3a4a" id="avgVal">AVG: —</span>
+      </div>
+    </div>
+
+    <div class="ps">
+      <div class="ps-label">Session Stats</div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">Total Blinks</div><div class="stat-val" id="sTot">0</div></div>
+        <div class="stat"><div class="stat-label">Per Minute</div><div class="stat-val" id="sPm">—</div></div>
+        <div class="stat"><div class="stat-label">Avg Duration</div><div class="stat-val" id="sAvg">—</div></div>
+        <div class="stat"><div class="stat-label">Last Blink</div><div class="stat-val" id="sLast" style="font-size:12px;line-height:2">—</div></div>
+      </div>
+    </div>
+
+    <div class="ps">
+      <div class="ps-label">Blink Timeline · 60s</div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="ps" style="flex:1">
+      <div class="ps-label">Event Log</div>
+      <div class="log" id="log">
+        <div class="log-row"><span class="log-t">--:--:--</span><span class="log-m">Awaiting start...</span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span class="fm" id="fps">FPS: —</span>
+  <span class="fm">🔒 ALL PROCESSING LOCAL</span>
+  <span class="fm" id="clock">00:00</span>
+</footer>
+
+<!-- MediaPipe via unpkg with pinned versions -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<script>
+// ── Landmark indices ──────────────────────────────────────────
+// FIX 1: After mirroring (x = 1 - x), landmark 362 (user's right eye) appears
+// on the LEFT side of the canvas, and landmark 33 (user's left eye) appears on
+// the RIGHT side. Labels must reflect screen position after the mirror flip.
+// L_EYE (screen-left, user's right eye) uses indices 362-group
+// R_EYE (screen-right, user's left eye) uses indices 33-group
+const L_EYE = [362, 385, 387, 263, 373, 380]; // screen-left after mirror
+const R_EYE = [33,  160, 158, 133, 153, 144];  // screen-right after mirror
+
+// ── Tuning params ─────────────────────────────────────────────
+const EAR_THRESH  = 0.22;
+const CONSEC_REQ  = 2;
+const COOLDOWN_MS = 250;
+
+// ── Warning throttle: don't spam log on every frame ───────────
+// FIX 2: Track when we last emitted each warning so we only log once per
+// 10-second window, not on every ~30fps frame.
+const WARNING_COOLDOWN_MS = 10000;
+let lastLowRateWarnMs  = 0;
+let lastHighRateWarnMs = 0;
+
+// ── State ─────────────────────────────────────────────────────
+let blinkCount   = 0;
+let consecClosed = 0;
+let inBlink      = false;
+let blinkStart   = 0;
+let lastBlinkMs  = 0;
+let durations    = [];
+let timestamps   = [];
+let sessionStart = 0;
+let frameCount   = 0;
+let lastFpsTick  = 0;
+
+const video  = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+// ── Maths ─────────────────────────────────────────────────────
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+function computeEAR(lms, idx) {
+  const [p1,p2,p3,p4,p5,p6] = idx.map(i => lms[i]);
+  const num = dist(p2, p6) + dist(p3, p5);
+  const den = 2.0 * dist(p1, p4);
+  return den < 0.0001 ? 0 : num / den;
+}
+
+function earColor(v) {
+  if (v < EAR_THRESH) return '#ff3355';
+  if (v < 0.27)       return '#ffb700';
+  return '#00f5d4';
+}
+
+// ── UI helpers ────────────────────────────────────────────────
+function timeStr() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+
+function addLog(msg, type = '') {
+  const el  = document.getElementById('log');
+  const row = document.createElement('div');
+  row.className = 'log-row';
+  row.innerHTML = `<span class="log-t">${timeStr()}</span><span class="log-m ${type}">${msg}</span>`;
+  el.insertBefore(row, el.firstChild);
+  while (el.children.length > 30) el.removeChild(el.lastChild);
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function updateTimeline() {
+  const now = Date.now();
+  document.querySelectorAll('.tl-tick').forEach(t => {
+    const age = now - parseInt(t.dataset.ts);
+    if (age > 60000) { t.remove(); return; }
+    const pct = (1 - age / 60000) * 93;
+    t.style.left    = pct + '%';
+    t.style.opacity = Math.max(0.15, 1 - age / 60000);
+  });
+}
+
+// ── Main callback ─────────────────────────────────────────────
+function onResults(results) {
+  const now = Date.now();
+  frameCount++;
+
+  if (now - lastFpsTick >= 1000) {
+    document.getElementById('fps').textContent = 'FPS: ' + frameCount;
+    frameCount  = 0;
+    lastFpsTick = now;
+  }
+
+  const sec = Math.floor((now - sessionStart) / 1000);
+  document.getElementById('clock').textContent =
+    String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+
+  // Mirror the video so it feels like a mirror
+  ctx.save();
+  ctx.translate(640, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(results.image, 0, 0, 640, 480);
+  ctx.restore();
+
+  updateTimeline();
+
+  if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+    document.getElementById('faceBadge').textContent = 'NO FACE';
+    document.getElementById('faceBadge').classList.remove('on');
+    window.parent.postMessage({ type: 'ciq-detection', detectorKey: 'blink', faceVisible: false, attention: 0, blinkRate: 0, expression: 'no_face' }, '*');
+    return;
+  }
+
+  document.getElementById('faceBadge').textContent = 'FACE ✓';
+  document.getElementById('faceBadge').classList.add('on');
+
+  const lms = results.multiFaceLandmarks[0];
+
+  // Mirror landmarks to match mirrored canvas
+  const M = lms.map(p => ({ x: 1 - p.x, y: p.y, z: p.z }));
+
+  const lEAR = computeEAR(M, L_EYE);
+  const rEAR = computeEAR(M, R_EYE);
+  const avg  = (lEAR + rEAR) / 2;
+
+  // EAR bars — FIX 3: "Left" label maps to screen-left (L_EYE / lEAR),
+  // "Right" maps to screen-right (R_EYE / rEAR). This is already consistent
+  // after the mirror flip, so just ensure lVal↔lEAR and rVal↔rEAR are not crossed.
+  document.getElementById('lBar').style.cssText = `width:${Math.min(lEAR/0.42*100,100)}%;background:${earColor(lEAR)}`;
+  document.getElementById('rBar').style.cssText = `width:${Math.min(rEAR/0.42*100,100)}%;background:${earColor(rEAR)}`;
+  document.getElementById('lVal').style.color   = earColor(lEAR);
+  document.getElementById('rVal').style.color   = earColor(rEAR);
+  document.getElementById('lVal').textContent   = lEAR.toFixed(3);
+  document.getElementById('rVal').textContent   = rEAR.toFixed(3);
+  document.getElementById('avgVal').textContent = 'AVG: ' + avg.toFixed(3);
+
+  // ── Blink state machine ─────────────────────────────────────
+  if (avg < EAR_THRESH) {
+    consecClosed++;
+    if (!inBlink && consecClosed >= CONSEC_REQ) {
+      inBlink    = true;
+      blinkStart = now;
+    }
+  } else {
+    if (inBlink && (now - lastBlinkMs) > COOLDOWN_MS) {
+      const dur = now - blinkStart;
+      blinkCount++;
+      lastBlinkMs = now;
+
+      durations.push(dur);
+      if (durations.length > 60) durations.shift();
+
+      timestamps.push(now);
+      // FIX 4: Filter timestamps BEFORE computing rate so the warning check
+      // below and the stat update both operate on the same, correct 60s window.
+      timestamps = timestamps.filter(t => now - t < 60000);
+
+      // Timeline tick
+      const tl   = document.getElementById('timeline');
+      const tick = document.createElement('div');
+      tick.className = 'tl-tick';
+      tick.dataset.ts = now;
+      tick.style.left    = '93%';
+      tick.style.opacity = '1';
+      tl.appendChild(tick);
+
+      addLog(`Blink #${blinkCount} · ${dur}ms`, 'ev');
+
+      const bb = document.getElementById('blinkBadge');
+      bb.classList.add('blink-flash');
+      setTimeout(() => bb.classList.remove('blink-flash'), 400);
+
+      document.getElementById('blinkBadge').textContent = 'BLINKS: ' + blinkCount;
+      document.getElementById('bigNum').textContent      = blinkCount;
+      document.getElementById('sTot').textContent        = blinkCount;
+      document.getElementById('sLast').textContent       = timeStr().slice(0, 8);
+
+      const avgDur = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
+      document.getElementById('sAvg').textContent = avgDur + 'ms';
+
+      // FIX 2 (applied): Rate warnings are throttled so they only fire once per
+      // WARNING_COOLDOWN_MS window instead of spamming the log every frame.
+      const rate = timestamps.length;
+      if (blinkCount > 8 && rate < 8 && (now - lastLowRateWarnMs) > WARNING_COOLDOWN_MS) {
+        addLog('Low blink rate — eye strain risk', 'wn');
+        lastLowRateWarnMs = now;
+      }
+      if (blinkCount > 8 && rate > 35 && (now - lastHighRateWarnMs) > WARNING_COOLDOWN_MS) {
+        addLog('High blink rate detected', 'wn');
+        lastHighRateWarnMs = now;
+      }
+    }
+    inBlink      = false;
+    consecClosed = 0;
+  }
+
+  // FIX 5: Filter timestamps here too before reading rate for the stat panel,
+  // since time has passed since the last blink event updated it.
+  timestamps = timestamps.filter(t => now - t < 60000);
+  const rate = timestamps.length;
+  const pmEl = document.getElementById('sPm');
+  pmEl.textContent = rate;
+  pmEl.className   = 'stat-val' + (rate < 8 && blinkCount > 8 ? ' warn' : rate > 35 ? ' danger' : '');
+
+  // ── ClassroomIQ postMessage bridge ──────────────────────────────────────────
+  // Normal blink rate: 15-20/min → attention ~80
+  // Low (<8): eye strain / fatigue → attention drops
+  // High (>35): irritation / stress → attention drops
+  const _blinkAttention = (rate < 3)
+    ? 40
+    : (rate < 8)
+      ? Math.round(50 + (rate / 8) * 30)
+      : (rate <= 25)
+        ? Math.round(70 + Math.min(rate - 8, 10) * 1.5)
+        : Math.round(Math.max(40, 90 - (rate - 25) * 1.5));
+  window.parent.postMessage({
+    type:        'ciq-detection',
+    detectorKey: 'blink',
+    faceVisible: true,
+    attention:   _blinkAttention,
+    blinkRate:   rate,
+    expression:  rate < 8 ? 'fatigued' : rate > 35 ? 'irritated' : 'normal'
+  }, '*');
+  // ────────────────────────────────────────────────────────────────────────────
+
+  // ── Draw eye outlines ───────────────────────────────────────
+  // L_EYE → lEAR, R_EYE → rEAR (correct pairing, no cross)
+  [[L_EYE, lEAR], [R_EYE, rEAR]].forEach(([idx, e]) => {
+    const pts = idx.map(i => ({ x: M[i].x * 640, y: M[i].y * 480 }));
+    const cx  = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cy  = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+    const minY = Math.min(...pts.map(p => p.y));
+
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.closePath();
+    ctx.fillStyle   = earColor(e) + '22';
+    ctx.fill();
+    ctx.strokeStyle = earColor(e);
+    ctx.lineWidth   = 2;
+    ctx.shadowColor = earColor(e);
+    ctx.shadowBlur  = 5;
+    ctx.stroke();
+    ctx.shadowBlur  = 0;
+
+    // EAR label
+    ctx.font      = "bold 11px 'Share Tech Mono', monospace";
+    ctx.fillStyle = earColor(e);
+    ctx.textAlign = 'center';
+    ctx.fillText(e.toFixed(3), cx, minY - 7);
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle   = earColor(e);
+    ctx.shadowColor = earColor(e);
+    ctx.shadowBlur  = 8;
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+  });
+}
+
+// ── Startup ───────────────────────────────────────────────────
+async function init() {
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  setStatus('Requesting camera access...');
+
+  try {
+    // 1. Get webcam
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 480, facingMode: 'user' }
+    });
+    video.srcObject = stream;
+    await new Promise(resolve => { video.onloadedmetadata = resolve; });
+    video.play();
+    setStatus('Camera ready. Loading AI model...');
+
+    // 2. Verify MediaPipe loaded
+    if (typeof FaceMesh === 'undefined') {
+      throw new Error('FaceMesh not loaded — check internet connection and try refreshing.');
+    }
+
+    // 3. Init FaceMesh
+    const faceMesh = new FaceMesh({
+      locateFile: file =>
+        `https://unpkg.com/@mediapipe/face_mesh@0.4.1633559619/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: false,       // false = 468 pts, faster
+      minDetectionConfidence: 0.55,
+      minTrackingConfidence: 0.55,
+    });
+
+    faceMesh.onResults(onResults);
+    setStatus('Warming up model...');
+
+    // 4. Start camera loop
+    if (typeof Camera === 'undefined') {
+      throw new Error('Camera utils not loaded — check internet connection and try refreshing.');
+    }
+
+    const cam = new Camera(video, {
+      onFrame: async () => {
+        await faceMesh.send({ image: video });
+      },
+      width: 640,
+      height: 480,
+    });
+
+    await cam.start();
+
+    // 5. All good
+    sessionStart = Date.now();
+    lastFpsTick  = Date.now();
+
+    document.getElementById('prompt').style.display   = 'none';
+    document.getElementById('bigCount').style.display = 'block';
+    document.getElementById('camBadge').textContent   = 'CAM ON';
+    document.getElementById('camBadge').classList.add('on');
+
+    addLog('System ready', 'ev');
+    addLog('Face the camera and blink normally');
+
+  } catch (err) {
+    btn.disabled = false;
+    setStatus('⚠ ' + err.message);
+    addLog(err.message, 'er');
+    console.error('[BlinkSense]', err);
+  }
+}
+
+// ── ClassroomIQ auto-start listener ─────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'ciq-start-camera') {
+    var b = document.getElementById('startBtn');
+    if (b && !b.disabled) { b.disabled = true; init(); }
+  }
+});
+// Also auto-start on load when inside an iframe
+if (window.self !== window.top) {
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      var b = document.getElementById('startBtn');
+      if (b && !b.disabled) { b.disabled = true; init(); }
+    }, 800);
+  });
+}
+</script>
+</body>
+</html>
