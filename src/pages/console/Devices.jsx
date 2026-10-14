@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Cpu, Plus } from 'lucide-react'
+import { Cpu, Plus } from '../../components/icons'
 import { useLive } from '../../data/LiveContext'
 import { Block, PageHead, AnimatedNumber, hhmm } from '../../components/live'
 

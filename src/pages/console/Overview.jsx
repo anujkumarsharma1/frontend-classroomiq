@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
-import { Users, DoorOpen, Eye, Cpu, ShieldAlert, Activity, Download, UserX, ArrowRight } from 'lucide-react'
+import { Users, DoorOpen, Eye, Cpu, ShieldAlert, Activity, Download, UserX, ArrowRight } from '../../components/icons'
 import { useLive } from '../../data/LiveContext'
 import { isInside, attentionPct, avg, flagsFor, downloadCsv } from '../../data/store'
 import { EVENT } from '../../data/schema'
+import { PixelPerson } from '../../components/pixel'
 import { AnimatedNumber, Sparkline, Block, PageHead, LivePulse, hhmm } from '../../components/live'
 
 const pct = (v) => `${Math.round(v * 100)}%`
@@ -78,7 +79,7 @@ export default function Overview() {
                 <Link key={r.id} to={r.mode === 'office' ? '/console/office' : `/console/rooms/${r.id}`} className="tile">
                   <div className="tile-cam" aria-hidden>
                     <div className="zones" style={{ gridTemplateColumns: `repeat(${r.zones > 8 ? 4 : 4}, 1fr)` }}>
-                      {Array.from({ length: r.zones }, (_, z) => <span key={z} className={zones[`z${z}`] ? 'z on' : 'z'} />)}
+                      {Array.from({ length: r.zones }, (_, z) => <span key={z} className={zones[`z${z}`] ? 'z on' : 'z'}>{zones[`z${z}`] && <PixelPerson seed={`${r.id}-${z}`} size={18} />}</span>)}
                     </div>
                     <span className="rec"><span className="pulse-dot" />{dev?.id}</span>
                   </div>

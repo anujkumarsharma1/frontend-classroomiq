@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Briefcase, Footprints, Monitor, Grid3x3 } from 'lucide-react'
+import { Briefcase, Footprints, Monitor, Grid3x3 } from '../../components/icons'
 import { useLive } from '../../data/LiveContext'
 import { Block, PageHead, AnimatedNumber, LivePulse } from '../../components/live'
 import { Heatmap } from './Rooms'

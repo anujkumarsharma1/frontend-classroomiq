@@ -11,7 +11,7 @@ export default function LoginPage() {
       <div className="auth-box">
         <Brand />
         <h1 style={{ marginBottom: 8 }}>Sign in</h1>
-        <p className="muted" style={{ marginBottom: 28 }}>Admins and teachers sign in. People in rooms don't need accounts.</p>
+        <p className="muted" style={{ marginBottom: 28 }}>Admins and teachers sign in. People in rooms don&apos;t need accounts.</p>
         <div className="card">
           <SignInForm idPrefix="login" />
         </div>

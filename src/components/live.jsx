@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { LayoutGrid, DoorOpen, Briefcase, Cpu, UserPlus, TrendingUp, LogOut, Radio, ChevronDown, ScanFace } from 'lucide-react'
+import { LayoutGrid, DoorOpen, Briefcase, Cpu, UserPlus, TrendingUp, LogOut, Radio, ChevronDown, ScanFace } from './icons'
 import { useAuth } from '../context/AuthContext'
 import { useLive } from '../data/LiveContext'
 
@@ -30,9 +30,11 @@ export function AnimatedNumber({ value, format = (v) => Math.round(v), className
 export function Sparkline({ data, height = 36, label }) {
   if (!data || data.length < 2) return <svg className="spark" height={height} role="img" aria-label={`${label}: not enough data`} />
   const max = Math.max(...data, 1e-6), min = Math.min(...data, 0)
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * 100},${height - ((v - min) / (max - min || 1)) * (height - 4) - 2}`).join(' ')
+  const yv = (v) => Math.round(height - ((v - min) / (max - min || 1)) * (height - 4) - 2)
+  const xs = (i) => (i / (data.length - 1)) * 100
+  const pts = data.map((v, i) => (i ? `${xs(i)},${yv(data[i - 1])} ${xs(i)},${yv(v)}` : `0,${yv(v)}`)).join(' ')
   return (
-    <svg className="spark" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" height={height} role="img" aria-label={label}>
+    <svg className="spark" shapeRendering="crispEdges" viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" height={height} role="img" aria-label={label}>
       <polygon points={`0,${height} ${pts} 100,${height}`} className="spark-fill" />
       <polyline points={pts} className="spark-line" vectorEffect="non-scaling-stroke" />
     </svg>
@@ -112,7 +114,7 @@ export function ConsoleShell({ children }) {
 export function PageHead({ title, sub, children }) {
   return (
     <div className="page-top">
-      <div><h1 className="h1">{title}</h1>{sub && <p className="muted">{sub}</p>}</div>
+      <div><h1 className="h1">{title}<span className="cursor" aria-hidden="true" /></h1>{sub && <p className="muted">{sub}</p>}</div>
       <div className="row-gap wrap-gap">{children}<DemoBadge /></div>
     </div>
   )

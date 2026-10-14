@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { ArrowRight, Eye, EyeOff, LogOut, X } from 'lucide-react'
+import { ArrowRight, Eye, EyeOff, LogOut, X } from './icons'
 import { useAuth } from '../context/AuthContext'
 
 

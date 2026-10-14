@@ -5,12 +5,11 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import Console from './pages/console/Console'
 import NotFoundPage from './pages/NotFoundPage'
+import { PixelLoader } from './components/pixel'
 
 const homeFor = () => '/console'
 
-const Loading = () => (
-  <div className="auth-page" role="status" aria-label="Loading"><span className="spinner" style={{ color: 'var(--accent)', width: 28, height: 28 }} /></div>
-)
+const Loading = () => <div className="auth-page"><PixelLoader /></div>
 
 const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth()

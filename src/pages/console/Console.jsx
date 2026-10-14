@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { LiveProvider, useLive } from '../../data/LiveContext'
 import { ConsoleShell } from '../../components/live'
+import { PixelLoader } from '../../components/pixel'
 import Overview from './Overview'
 import { RoomsList, RoomDetail } from './Rooms'
 import Person from './Person'
@@ -11,8 +12,8 @@ import Enroll from './Enroll'
 
 function Inner() {
   const { state, error } = useLive()
-  if (error) return <div className="block"><h1 className="h1">Can't load live data</h1><p className="muted">{error}</p></div>
-  if (!state) return <p role="status">Connecting…</p>
+  if (error) return <div className="block"><h1 className="h1">Can&apos;t load live data</h1><p className="muted">{error}</p></div>
+  if (!state) return <PixelLoader label="CONNECTING" />
   return (
     <Routes>
       <Route index element={<Overview />} />

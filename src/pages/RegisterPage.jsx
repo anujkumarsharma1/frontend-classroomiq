@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { Check } from 'lucide-react'
+import { Check } from '../components/icons'
 import { useAuth } from '../context/AuthContext'
 import api, { errorText } from '../utils/api'
 import { Brand, Field, PasswordInput, Spinner } from '../components/ui'

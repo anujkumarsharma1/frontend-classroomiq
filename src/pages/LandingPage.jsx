@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ScanFace, DoorOpen, Eye, Briefcase, Cpu, ShieldCheck, ArrowRight } from 'lucide-react'
+import { ScanFace, DoorOpen, Eye, Briefcase, Cpu, ShieldCheck, ArrowRight } from '../components/icons'
 import { useAuth } from '../context/AuthContext'
+import { PixelPerson, PixelCamera } from '../components/pixel'
 
 const FEATURES = [
   [DoorOpen, 'Attendance on entry', 'Room cameras recognise enrolled faces at the door and log entry, exit, late and early exits against the timetable.'],
@@ -21,11 +22,16 @@ export default function LandingPage() {
       <main>
         <section className="land-hero">
           <span className="chip">Prototype · multi-camera IoT</span>
-          <h1 className="display">Know who's in the room, and when.</h1>
+          <h1 className="display">Know who&apos;s in the room, and when.<span className="cursor" aria-hidden="true" /></h1>
           <p className="lede">ClassroomIQ connects fixed cameras in classrooms and offices through edge devices. Faces become attendance, head pose becomes attention, and every number is backed by an event you can audit.</p>
           <div className="row-gap">
             <button className="btn btn-primary btn-lg" onClick={() => { if (!user) enterDemo(); navigate('/console') }}>Explore the demo console <ArrowRight size={16} aria-hidden /></button>
             <a className="btn btn-lg" href="https://github.com/anujkumarsharma1/frontend-classroomiq/blob/v3/ARCHITECTURE.md">Read the architecture</a>
+          </div>
+          <div className="parade" aria-hidden="true">
+            <span className="parade-cam"><PixelCamera size={56} /></span>
+            <span className="parade-door" />
+            {['ana', 'ravi', 'meera', 'kabir', 'zoya'].map((n, i) => <span key={n} className="parade-walker" style={{ '--k': i }}><PixelPerson seed={n} walking size={36} /></span>)}
           </div>
           <p className="xs muted">The demo runs on simulated events. No real cameras are connected yet.</p>
         </section>

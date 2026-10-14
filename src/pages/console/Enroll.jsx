@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { UserPlus, ScanFace, ShieldCheck } from 'lucide-react'
+import { UserPlus, ScanFace, ShieldCheck } from '../../components/icons'
 import { useLive } from '../../data/LiveContext'
 import { Block, PageHead } from '../../components/live'
 

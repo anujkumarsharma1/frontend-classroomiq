@@ -1,5 +1,5 @@
 import { useParams, Navigate } from 'react-router-dom'
-import { Clock, Eye, EyeOff, User } from 'lucide-react'
+import { Clock, Eye, EyeOff, User } from '../../components/icons'
 import { useLive } from '../../data/LiveContext'
 import { flagsFor, attentionPct, blinkRate, isInside } from '../../data/store'
 import { Block, PageHead, Ring, Sparkline, AnimatedNumber, hhmm, STATUS } from '../../components/live'

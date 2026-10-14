@@ -1,8 +1,9 @@
 import { Link, useParams, Navigate } from 'react-router-dom'
-import { Clock, Grid3x3, Download, DoorOpen } from 'lucide-react'
+import { Clock, Grid3x3, Download, DoorOpen } from '../../components/icons'
 import { useLive } from '../../data/LiveContext'
 import { flagsFor, attentionPct, isInside, downloadCsv } from '../../data/store'
 import { heatmapHistory } from '../../data/mockStream'
+import { PixelPerson } from '../../components/pixel'
 import { Block, PageHead, AnimatedNumber, hhmm, STATUS, LivePulse } from '../../components/live'
 
 export function Timeline({ rows, from, to, now }) {
@@ -24,6 +25,14 @@ export function Timeline({ rows, from, to, now }) {
             {r.iv.map((i, k) => (
               <span key={k} className={`tl-bar ${i.out ? '' : 'open'}`} style={{ left: x(i.in), width: `calc(${x(i.out ?? now)} - ${x(i.in)})` }} />
             ))}
+            {r.iv.length > 0 && (() => {
+              const last = r.iv[r.iv.length - 1]
+              return (
+                <span key={`${last.in}-${last.out}`} className={`tl-sprite ${last.out ? 'leaving' : 'entering'}`} style={{ left: x(last.out ?? now) }}>
+                  <PixelPerson seed={r.id} walking size={22} />
+                </span>
+              )
+            })()}
           </div>
         </div>
       ))}
@@ -35,7 +44,7 @@ export function Timeline({ rows, from, to, now }) {
 export function Heatmap({ room }) {
   const data = heatmapHistory(room)
   return (
-    <div className="heat-wrap">
+    <div className="heat-wrap" tabIndex={0} role="region" aria-label="Occupancy heatmap">
       <table className="heat">
         <caption className="sr-only">Share of time each zone was occupied, by hour</caption>
         <thead><tr><th scope="col">Zone</th>{Array.from({ length: 10 }, (_, h) => <th key={h} scope="col">{String(8 + h).padStart(2, '0')}</th>)}</tr></thead>
