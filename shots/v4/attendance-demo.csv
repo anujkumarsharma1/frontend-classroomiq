@@ -1,0 +1,19 @@
+date,room,course,person_id,name,first_entry,last_exit,minutes_present,status,attention_pct,source
+2026-10-14,R-101,Data Structures,P-0001,Aarav Das,,,0,absent,47,demo
+2026-10-14,R-102,Operating Systems,P-0002,Diya Reddy,20:47,,39,on_time,,demo
+2026-10-14,LAB-2,Machine Learning,P-0003,Kabir Iyer,20:44,,40,on_time,78,demo
+2026-10-14,R-101,Data Structures,P-0004,Meera Singh,20:42,,40,on_time,,demo
+2026-10-14,R-102,Operating Systems,P-0005,Rohan Patel,20:43,,40,on_time,,demo
+2026-10-14,LAB-2,Machine Learning,P-0006,Ananya Nair,21:00,,26,late,,demo
+2026-10-14,R-101,Data Structures,P-0007,Ishaan Khan,20:43,,40,on_time,,demo
+2026-10-14,R-102,Operating Systems,P-0008,Saanvi Khan,20:43,,40,on_time,40,demo
+2026-10-14,LAB-2,Machine Learning,P-0009,Vihaan Khan,20:57,,29,late,,demo
+2026-10-14,R-101,Data Structures,P-0010,Kavya Reddy,20:43,,40,on_time,,demo
+2026-10-14,R-102,Operating Systems,P-0011,Arjun Iyer,20:46,,40,on_time,,demo
+2026-10-14,LAB-2,Machine Learning,P-0012,Nisha Singh,20:45,,40,on_time,,demo
+2026-10-14,R-101,Data Structures,P-0013,Dev Das,20:46,,40,on_time,57,demo
+2026-10-14,R-102,Operating Systems,P-0014,Riya Patel,20:44,21:26,40,early_exit,,demo
+2026-10-14,LAB-2,Machine Learning,P-0015,Aditya Bose,20:42,,40,on_time,56,demo
+2026-10-14,R-101,Data Structures,P-0016,Pooja Sharma,,,0,absent,,demo
+2026-10-14,R-102,Operating Systems,P-0017,Kunal Das,20:45,21:01,15,early_exit,,demo
+2026-10-14,LAB-2,Machine Learning,P-0018,Tara Iyer,20:43,,40,on_time,86,demo

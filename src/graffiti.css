@@ -1,0 +1,40 @@
+/* Graffiti accent layer over the pixel theme: one spray tag per page, drips, stickers, splatter. */
+:root { --neon: #00E436; --tag-bg: #1D2B53; --f-tag: 'Rubik Spray Paint', 'Press Start 2P', cursive;
+  --splat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160' viewBox='0 0 240 160'%3E%3Cg fill='%23FF004D' fill-opacity='.14'%3E%3Ccircle cx='40' cy='30' r='18'/%3E%3Ccircle cx='66' cy='22' r='5'/%3E%3Ccircle cx='22' cy='58' r='4'/%3E%3Ccircle cx='70' cy='50' r='2.5'/%3E%3Ccircle cx='190' cy='110' r='22'/%3E%3Ccircle cx='160' cy='132' r='6'/%3E%3Ccircle cx='222' cy='84' r='4'/%3E%3Ccircle cx='150' cy='96' r='2'/%3E%3C/g%3E%3Cg fill='%2300E436' fill-opacity='.16'%3E%3Ccircle cx='130' cy='40' r='10'/%3E%3Ccircle cx='148' cy='28' r='3'/%3E%3Ccircle cx='112' cy='58' r='2'/%3E%3Ccircle cx='60' cy='128' r='8'/%3E%3Ccircle cx='80' cy='140' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
+}
+
+/* spray tag */
+.tag { position: relative; display: inline-block; margin: 0 .1em; padding: .05em .35em .12em; background: var(--tag-bg); color: var(--neon);
+  font-family: var(--f-tag); font-weight: 400; font-size: 1.35em; line-height: 1.05; letter-spacing: .01em; transform: rotate(-2deg); vertical-align: .02em;
+  box-shadow: 4px 4px 0 #000; }
+.tag-text { display: inline-block; -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 55%); mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+  -webkit-mask-size: 260% 100%; mask-size: 260% 100%; -webkit-mask-position: 0 0; mask-position: 0 0; animation: spray-on .9s ease-out .25s both; }
+@keyframes spray-on { from { -webkit-mask-position: 100% 0; mask-position: 100% 0; } to { -webkit-mask-position: 0 0; mask-position: 0 0; } }
+.drips { position: absolute; left: 4%; right: 4%; top: 100%; width: 92%; height: 18px; fill: var(--tag-bg); overflow: visible; pointer-events: none; }
+.drip { transform-box: fill-box; transform-origin: top; animation: drip 1.1s steps(6, end) both; animation-delay: calc(.8s + var(--k) * 90ms); }
+@keyframes drip { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.h1 .tag { font-size: 1.3em; }
+.display .tag { font-size: 1.25em; padding: .05em .3em .15em; margin-bottom: 14px; }
+.page-top { margin-bottom: 30px; }
+
+/* stickers */
+.sticker, .chip.late { display: inline-flex; transform: rotate(var(--rot, -2deg)); box-shadow: 0 0 0 3px #fff, 5px 5px 0 3px #000; animation: slap .45s cubic-bezier(.3, 1.6, .5, 1) both; }
+.sticker:nth-of-type(2n), .chip.late:nth-of-type(2n) { --rot: 3deg; }
+.sticker:nth-of-type(3n) { --rot: 1.5deg; }
+.sticker-bad { background: #FF004D; color: #000; border: 2px solid #000; padding: 0 6px; font-weight: 400; margin: 0 4px 6px 0; }
+@keyframes slap { from { opacity: 0; transform: rotate(var(--rot, -2deg)) scale(1.6); } 70% { opacity: 1; transform: rotate(var(--rot, -2deg)) scale(.94); } to { transform: rotate(var(--rot, -2deg)) scale(1); } }
+.demo-badge.sticker { animation: slap .45s cubic-bezier(.3, 1.6, .5, 1) both, badge 2.4s steps(1, end) .5s infinite; }
+
+/* splatter + spray texture: hero and empty states only */
+.land-hero { position: relative; isolation: isolate; }
+.land-hero::before { content: ''; position: absolute; inset: 20px 0 0 40%; z-index: -1; background: var(--splat) right top / 420px auto no-repeat, var(--splat) 10% 80% / 260px auto no-repeat; pointer-events: none; }
+.hero-block { background-image: var(--noise), linear-gradient(rgba(255,255,255,.06) 2px, transparent 2px), linear-gradient(90deg, rgba(255,255,255,.06) 2px, transparent 2px); background-size: 120px 120px, 16px 16px, 16px 16px; }
+.empty { background: var(--splat) center / 300px auto no-repeat, var(--surface); }
+
+@media (max-width: 760px) {
+  .tag { font-size: 1.2em; } .land-hero::before { inset: 0; background-size: 260px auto, 180px auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tag-text, .drip, .sticker, .chip.late, .demo-badge.sticker { animation: none !important; -webkit-mask-image: none; mask-image: none; }
+}
