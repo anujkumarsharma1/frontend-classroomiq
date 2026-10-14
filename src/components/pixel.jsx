@@ -86,3 +86,20 @@ export function RouteFX() {
     </div>
   )
 }
+
+const DRIPS = [[6, 9], [19, 5], [33, 12], [47, 6], [61, 10], [78, 4], [90, 8]]
+export function SprayTag({ children }) {
+  return (
+    <span className="tag">
+      <span className="tag-text">{children}</span>
+      <svg className="drips" viewBox="0 0 100 16" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        {DRIPS.map(([x, h], i) => (
+          <g key={x} style={{ '--k': i }} className="drip">
+            <rect x={x} y="0" width="2" height={h} />
+            <rect x={x - 0.5} y={h} width="3" height="2.4" />
+          </g>
+        ))}
+      </svg>
+    </span>
+  )
+}

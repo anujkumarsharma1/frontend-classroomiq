@@ -18,7 +18,7 @@ export function AlertFeed({ alerts, rooms, compact }) {
       {alerts.slice(0, compact ? 4 : 12).map((a) => (
         <li key={a.id} className="alert-item">
           <span className="snap" role="img" aria-label="No snapshot stored"><UserX size={20} aria-hidden /></span>
-          <span className="grow"><b>Unknown face</b> · {rooms.find((r) => r.id === a.room)?.name}<br />
+          <span className="grow"><b className="sticker sticker-bad">Unknown face</b> · {rooms.find((r) => r.id === a.room)?.name}<br />
             <span className="xs muted">best match {a.match.score.toFixed(2)} &lt; threshold {a.match.threshold} · track {a.track}</span></span>
           <time className="xs muted mono">{hhmm(a.ts)}</time>
         </li>
@@ -48,7 +48,7 @@ export default function Overview() {
         <Block title="Present now" icon={Users} span="s2 r2 hero-block" detail={<p className="small">Counted from <code>person.entered</code> minus <code>person.exited</code> events across all rooms.</p>}>
           <div className="big"><AnimatedNumber value={inside.length} /><span className="of">/ {world.people.length} enrolled</span></div>
           <div className="meter" aria-hidden><span style={{ width: pct(inside.length / world.people.length) }} /></div>
-          <div className="row-gap small"><span className="chip warn">{late} late</span><span className="chip bad">{early} left early</span><LivePulse /></div>
+          <div className="row-gap small"><span className="chip warn sticker">{late} late</span><span className="chip bad">{early} left early</span><LivePulse /></div>
         </Block>
         <Block title="Facing the board" icon={Eye} detail={<p className="small">Head pose (solvePnP) inside the board region. Not a measure of understanding.</p>}>
           <div className="big"><AnimatedNumber value={att == null ? null : att * 100} format={(v) => `${Math.round(v)}%`} /></div>

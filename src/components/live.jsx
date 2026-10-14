@@ -3,6 +3,7 @@ import { NavLink, Link } from 'react-router-dom'
 import { LayoutGrid, DoorOpen, Briefcase, Cpu, UserPlus, TrendingUp, LogOut, Radio, ChevronDown, ScanFace } from './icons'
 import { useAuth } from '../context/AuthContext'
 import { useLive } from '../data/LiveContext'
+import { SprayTag } from './pixel'
 
 export const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -76,7 +77,7 @@ export function Block({ title, icon: Icon, span = '', children, detail, action, 
 export function DemoBadge() {
   const { kind } = useLive() || {}
   if (kind !== 'demo') return null
-  return <span className="demo-badge" title="All numbers on this screen come from a simulated MQTT event stream, not real cameras."><Radio size={13} aria-hidden /> Demo data</span>
+  return <span className="demo-badge sticker" title="All numbers on this screen come from a simulated MQTT event stream, not real cameras."><Radio size={13} aria-hidden /> Demo data</span>
 }
 
 export function LivePulse({ label = 'Live' }) { return <span className="live-pulse"><span className="pulse-dot" aria-hidden />{label}</span> }
@@ -111,10 +112,17 @@ export function ConsoleShell({ children }) {
   )
 }
 
+function splitTag(title) {
+  const words = String(title).split(' ')
+  if (words.length < 2) return <SprayTag>{title}</SprayTag>
+  const last = words.pop()
+  return <>{words.join(' ')} <SprayTag>{last}</SprayTag></>
+}
+
 export function PageHead({ title, sub, children }) {
   return (
     <div className="page-top">
-      <div><h1 className="h1">{title}<span className="cursor" aria-hidden="true" /></h1>{sub && <p className="muted">{sub}</p>}</div>
+      <div><h1 className="h1">{splitTag(title)}<span className="cursor" aria-hidden="true" /></h1>{sub && <p className="muted">{sub}</p>}</div>
       <div className="row-gap wrap-gap">{children}<DemoBadge /></div>
     </div>
   )

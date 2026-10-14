@@ -4,10 +4,12 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import '@fontsource/press-start-2p/400.css'
 import '@fontsource/vt323/400.css'
+import '@fontsource/rubik-spray-paint/400.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import './index.css'
 import './pixel.css'
+import './graffiti.css'
 import { BootLoader, RouteFX } from './components/pixel.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
