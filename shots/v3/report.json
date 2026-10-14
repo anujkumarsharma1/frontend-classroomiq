@@ -1,0 +1,156 @@
+[
+ {
+  "dev": "desktop",
+  "n": "landing",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "login",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "register",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "overview",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "rooms",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "room-timeline-heatmap",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "person",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "office",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "trends-alerts",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "devices",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "desktop",
+  "n": "enroll",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "landing",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "login",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "register",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "overview",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "rooms",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "room-timeline-heatmap",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "person",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "office",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "trends-alerts",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "devices",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ },
+ {
+  "dev": "mobile",
+  "n": "enroll",
+  "ov": 0,
+  "errs": [],
+  "axe": []
+ }
+]

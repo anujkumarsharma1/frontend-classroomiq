@@ -7,7 +7,6 @@ import { Field, PasswordInput, Spinner } from './ui'
 
 const ROLES = [
   { id: 'teacher', label: 'Teacher' },
-  { id: 'student', label: 'Student' },
   { id: 'admin', label: 'Admin' },
 ]
 
@@ -30,7 +29,7 @@ export default function SignInForm({ idPrefix = 'signin' }) {
       const { token, user, institution } = res.data
       login(token, user, institution)
       toast.success(`Welcome back, ${user.fullName}`)
-      navigate(`/${user.role}`)
+      navigate('/console')
     } catch (err) {
       setError(errorText(err, 'Sign-in failed. Check your details and try again.'))
     } finally {
@@ -50,7 +49,7 @@ export default function SignInForm({ idPrefix = 'signin' }) {
           <input id={`${idPrefix}-email`} className="input" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@school.edu" required />
         </Field>
       ) : (
-        <Field label={role === 'teacher' ? 'Teacher ID' : 'Student ID'} hint="Your admin gave you this ID." id={`${idPrefix}-uid`}>
+        <Field label={'Teacher ID'} hint="Your admin gave you this ID." id={`${idPrefix}-uid`}>
           <input id={`${idPrefix}-uid`} className="input" autoComplete="username" value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value.toUpperCase() })} placeholder={role === 'teacher' ? 'INST001-TCH-001' : 'INST001-STD-001'} required />
         </Field>
       )}

@@ -5,7 +5,7 @@ import { Check } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import api, { errorText } from '../utils/api'
 import { Brand, Field, PasswordInput, Spinner } from '../components/ui'
-import { FEATURES } from '../utils/detectors'
+import { FEATURES } from '../utils/features'
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1)
@@ -40,7 +40,7 @@ export default function RegisterPage() {
       })
       login(data.token, data.user, data.institution)
       toast.success('Institution registered')
-      navigate('/admin')
+      navigate('/console')
     } catch (err) {
       setError(errorText(err, 'Registration failed. Try again.'))
     } finally {
@@ -55,7 +55,7 @@ export default function RegisterPage() {
         <p className="small muted" style={{ marginBottom: 6 }}>Step {step} of 2</p>
         <h1 style={{ marginBottom: 8 }}>{step === 1 ? 'Register your institution' : 'Choose what to track'}</h1>
         <p className="muted" style={{ marginBottom: 28 }}>
-          {step === 1 ? "You'll be the admin. You add teachers and students after this." : 'Students only load the detectors you turn on. You can register with any mix.'}
+          {step === 1 ? "You'll be the admin. You add rooms, cameras and people after this." : 'Edge devices only run the features you turn on.'}
         </p>
         <div className="card">
           {step === 1 ? (
